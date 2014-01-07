@@ -60,6 +60,8 @@ def checkretrieve(webpage, place):
 def download(place, website):
     '''Downloads all of the desired file type from WEBSITE to PLACE.'''
     html = urlopen(website).read()
+    # We delete html comments that have href in them. These are traps.
+    html = re.sub(r'<!--.*href.*-->', '', html)
     filelist = linkre.findall(html)
     for file_ in filelist:
         firstquote = file_.find('\"')
@@ -91,3 +93,5 @@ for pair in placeslist:
     websites = pair[1]
     for website in websites:
         download(place, website)
+
+print 'done'
