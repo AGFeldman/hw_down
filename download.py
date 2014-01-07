@@ -1,9 +1,10 @@
-from urllib2 import urlopen, HTTPError, URLError
-from urllib import urlretrieve
-import csv
 import re
+
+from csv import reader
 from os import path, stat
-import time
+from time import strptime, mktime
+from urllib2 import urlopen, URLError, HTTPError
+from urllib import urlretrieve
 
 typesline = 1
 placesline = 4
@@ -18,7 +19,7 @@ def isgood(entry):
     return True
 
 with open('personalize.csv', 'rb') as csvfile:
-    csvreader = csv.reader(csvfile, delimiter=',')
+    csvreader = reader(csvfile, delimiter=',')
     personal = list(csvreader)
     # personal is now a 2D list. access[row][column]
 
@@ -81,12 +82,15 @@ def download(place, website):
             url_handle = urlopen(fileloc)
             headers = url_handle.info()
             webmodtime_raw = headers.getheader('Last-Modified')
-            time_struct = time.strptime(webmodtime_raw, 
-                                        '%a, %d %b %Y %H:%M:%S %Z')
-            webmodtime = time.mktime(time_struct)
-            mymodtime = stat(longname).st_mtime
-            if mymodtime < webmodtime:
+            if webmodtime_raw is None:
                 checkretrieve(fileloc, longname)
+            else:
+                time_struct = strptime(webmodtime_raw, 
+                                            '%a, %d %b %Y %H:%M:%S %Z')
+                webmodtime = mktime(time_struct)
+                mymodtime = stat(longname).st_mtime
+                if mymodtime < webmodtime:
+                    checkretrieve(fileloc, longname)
 
 for pair in placeslist:
     place = pair[0]
