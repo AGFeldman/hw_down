@@ -2,9 +2,13 @@ from urllib2 import urlopen, HTTPError, URLError
 from urllib import urlretrieve
 import csv
 import re
+from os import path, stat
+import time
 
 typesline = 1
 placesline = 4
+
+check_for_new_version = True
 
 def isgood(entry):
     if entry == '':
@@ -23,7 +27,7 @@ reglist = []
 for entry in personal[typesline]:
     if isgood(entry):
         typeslist.append(entry)
-        reglist.append('href.*\".*' + entry + '\"')
+        reglist.append('href.{0,5}\".*' + entry + '\"')
 finalreg = '|'.join(reglist)
 linkre = re.compile(finalreg)
 # linkre is now a regular expression that matches any html code snippet
@@ -47,6 +51,7 @@ def checkretrieve(webpage, place):
     try:
         urlopen(webpage)
         urlretrieve(webpage, place)
+        print 'Downloaded a file to', place
     except HTTPError, e:
         None
     except URLError, e:
@@ -66,14 +71,23 @@ def download(place, website):
         name = file_[beginname:end]
         longname = place + name
         fileloc = file_[beginfileloc:end]
-        if fileloc[:4] == 'http':
+        if fileloc[:4] != 'http':
+            fileloc = website + fileloc
+        if not path.exists(longname):
             checkretrieve(fileloc, longname)
-        else:
-            checkretrieve(website + fileloc, longname)
-    
+        elif check_for_new_version:
+            url_handle = urlopen(fileloc)
+            headers = url_handle.info()
+            webmodtime_raw = headers.getheader('Last-Modified')
+            time_struct = time.strptime(webmodtime_raw, 
+                                        '%a, %d %b %Y %H:%M:%S %Z')
+            webmodtime = time.mktime(time_struct)
+            mymodtime = stat(longname).st_mtime
+            if mymodtime < webmodtime:
+                checkretrieve(fileloc, longname)
+
 for pair in placeslist:
     place = pair[0]
     websites = pair[1]
     for website in websites:
         download(place, website)
-
