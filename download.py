@@ -1,4 +1,4 @@
-from urllib2 import urlopen
+from urllib2 import urlopen, HTTPError, URLError
 from urllib import urlretrieve
 import csv
 import re
@@ -42,20 +42,34 @@ for row in personal[placesline:]:
 # placeslist is now a list of tuples
 # (place on your computer, [list of web pages to scan there])
 
+def checkretrieve(webpage, place):
+    '''Checks if WEBPAGE exists. If it does, downloads it to PLACE.'''
+    try:
+        urlopen(webpage)
+        urlretrieve(webpage, place)
+    except HTTPError, e:
+        None
+    except URLError, e:
+        None
+
 def download(place, website):
     '''Downloads all of the desired file type from WEBSITE to PLACE.'''
-    # currently just prints information about those files on WEBSITE
     html = urlopen(website).read()
     filelist = linkre.findall(html)
     for file_ in filelist:
         firstquote = file_.find('\"')
         lastquote = file_.rfind('\"')
         lastslash = file_.rfind('/')
-        begin = max(firstquote, lastslash) + 1
+        beginname = max(firstquote, lastslash) + 1
+        beginfileloc = firstquote + 1
         end = lastquote
-        name = file_[begin:end]
-        print file_
-        print name
+        name = file_[beginname:end]
+        longname = place + name
+        fileloc = file_[beginfileloc:end]
+        if fileloc[:4] == 'http':
+            checkretrieve(fileloc, longname)
+        else:
+            checkretrieve(website + fileloc, longname)
     
 for pair in placeslist:
     place = pair[0]
@@ -63,17 +77,3 @@ for pair in placeslist:
     for website in websites:
         download(place, website)
 
-link = 'http://www.math.caltech.edu/~2013-14/2term/ma108b'
-link2 = 'http://www.math.caltech.edu/~2013-14/2term/ma108b/hwk1.pdf'
-url = urlopen(link)
-text = url.read()
-
-# search text for hrefsomething"something.pdf"
-# get the link and set it as LINK
-# get the name and set it as NAME. also add location info to the name
-
-name = '/home/aaron/Dropbox/Caltech/WIN_2014/hwk1.pdf'
-# urlretrieve(link2, name)
-
-filelist = linkre.findall(text)
-print filelist
