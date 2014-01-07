@@ -43,9 +43,25 @@ for row in personal[placesline:]:
 # (place on your computer, [list of web pages to scan there])
 
 def download(place, website):
+    '''Downloads all of the desired file type from WEBSITE to PLACE.'''
+    # currently just prints information about those files on WEBSITE
     html = urlopen(website).read()
     filelist = linkre.findall(html)
+    for file_ in filelist:
+        firstquote = file_.find('\"')
+        lastquote = file_.rfind('\"')
+        lastslash = file_.rfind('/')
+        begin = max(firstquote, lastslash) + 1
+        end = lastquote
+        name = file_[begin:end]
+        print file_
+        print name
     
+for pair in placeslist:
+    place = pair[0]
+    websites = pair[1]
+    for website in websites:
+        download(place, website)
 
 link = 'http://www.math.caltech.edu/~2013-14/2term/ma108b'
 link2 = 'http://www.math.caltech.edu/~2013-14/2term/ma108b/hwk1.pdf'
